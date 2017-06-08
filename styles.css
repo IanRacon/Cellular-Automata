@@ -1,0 +1,42 @@
+h1{
+	color: #00FF00;
+	font-weight: normal;
+	letter-spacing: .2em;
+	margin-bottom: 1em;
+	text-align:center;
+}
+
+h2{
+	color: #FF0000;
+}
+
+#canvas_article{
+	position: relative;dddddds
+	/*border: 1px;*/
+	height: 500px;
+}
+
+#documentation{
+	position: relative;
+
+}
+#div_2{
+	position:absolute;
+	top:0;
+	left:0;
+	width:400px;
+}
+#div_1{
+	position:absolute;
+	top:150px;
+	left:405px;
+	right:100px;
+	width:800px;
+}
+#opis{
+	height:500px;
+}
+p{
+	text-align:center;	
+	font-size:20;
+}
