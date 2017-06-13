@@ -14,13 +14,31 @@
 	<article id="canvas_article">	
 		<div id="parent">
 			<div id="div_2">
-				Gęstość życia (0-1):
+				<canvas id="canvas" width="1600" height="400" style="border:1px solid #000000;">Your browser doesn't support HTML5 canvas</canvas>
+
+				<table>
+					<tr>
+					<td><button id="start" onclick="startFunc()">Start</button></td>
+					<td><button id="pause" onclick="pauseFunc()">Pauza</button></td>
+					<td><button id="step" onclick="stepFunc()">Krok</button></td>
+				</tr>
+				</table>
+				Gęstość strzałek skierowanych ku górze (0-1):
 				<input type="text" id="density" maxlength="5" size="5">
-				<button id="start" onclick="startFunc()">Start</button>
-				<button id="pause" onclick="pauseFunc()">Pauza</button>
-				<button id="step" onclick="stepFunc()">Krok</button>
-				<button id="restart" onclick="restartFunc()">Restart</button>
-				<canvas id="canvas" width="1600" height="400" style="border:1px solid #000000;">Your browser don't support HTML5 canvas</canvas>
+				<table>
+					<tr>
+						Całkowita liczba strzałek
+					</tr>
+				<tr>
+				<td>2</td><td><input type="range" class="digitInput" id="arrowsCount" min="2" max="50" value="30" oninput="handleArrowsCount(this.value)" onchange="handleArrowsCount(this.value)"></td><td>50</td><td><p id="dispArrowCount"></p></td>
+				</tr>
+					<tr>
+						Prędkość
+					</tr>
+				<tr>
+				<td>W</td><td><input type="range" class="digitInput" id="windWE" min="0" max="10" value="5" oninput="handleWindWEChange(this.value)" onchange="handleWindWEChange(this.value)"></td><td>E</td><td><p id="dispWindWE"></p></td>
+				</tr>
+				</table>
 			</div>
 			<div id="div_1">
 			<div id="chartContainer" style="height: 300px; width: 100%;">
@@ -30,12 +48,6 @@
 		</div>
 		<script src="draw.js"> </script>	
 	</article>
-<!-- 	<article id="documentation">
-		<ul>
-			<li><a href='dokumentacja.pdf'>Dokumentacja</a></li>
-			<li><a href='tutorial.html'>Tutorial</a></li>
-		</ul>	
-	</article> -->
 	<footer>
 	</footer>
 </body>
