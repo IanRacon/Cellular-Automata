@@ -1,6 +1,22 @@
 function mod(n, m) {
         return ((n % m) + m) % m;
 }
+function shuffle(a) {
+    var j, x, i;
+    for (i = a.length; i; i--) {
+        j = Math.floor(Math.random() * i);
+        x = a[i - 1].state;
+        a[i - 1].setState(a[j].state);
+        a[j].state = x;
+    }}
+
+// pobierz canvas z html oraz kontekst
+var canvas = document.getElementById("canvas");
+var ctx = canvas.getContext("2d");
+
+// wymiary canvasa 
+var	canvas_width = canvas.width;
+var	canvas_height = canvas.height;
 
 var arrowUpImg = new Image();
 var arrowDownImg = new Image();
@@ -11,7 +27,7 @@ arrowDownImg.src = "resources/Arrow_Down.png"
 arrowsSprite.src = "resources/arrows_sprite_64x64.png"
 highlightSpriteSheet.src = "resources/highlight_sprite_64x64a.png"
 
-FPS = 30;
+FPS = 60;
 
 var SIMPLE = 0;
 var ROUGH = 1;
@@ -20,18 +36,16 @@ var STATE_UNDEFINED = -1;
 var STATE_DOWN = 0;
 var STATE_UP = 1;
 
+
 var TOTAL_ROWS = 1;
 var TOTAL_COLS = 50;
 
-var CELL_SIZE = 26;
-// pobierz canvas z html oraz kontekst
-var canvas = document.getElementById("canvas");
-var ctx = canvas.getContext("2d");
+cellSize = canvas_width/TOTAL_COLS;
+if(cellSize>canvas_height)
+{
+	cellSize=canvas_height;
+}
 
-
-// wymiary canvasa 
-var	canvas_width = canvas.width;
-var	canvas_height = canvas.height;
 function Sprite(ctx, image, width, height, offset, numberOfFrames, updatesPerFrame, loop)
 {
 	this.render = function(x, y, width, height)
@@ -79,7 +93,7 @@ function Sprite(ctx, image, width, height, offset, numberOfFrames, updatesPerFra
 	this.height = height;
 	this.width = width;
 }
-var highlightOffset = CELL_SIZE-CELL_SIZE*1/7;
+
 //holds single cell
 function Cell(ctx, x, y, width, height){
 	this.drawCellImg = function(img)
@@ -99,7 +113,7 @@ function Cell(ctx, x, y, width, height){
         {
             if(this.animationDownUpOngoing)
             {
-            	this.arrowSpriteDown.render(this.x, this.y, CELL_SIZE, CELL_SIZE);
+            	this.arrowSpriteDown.render(this.x, this.y, this.width, this.width);
             	if(this.arrowSpriteDown.update())
 	            {
 	            	this.animationDownUpOngoing = false;
@@ -114,7 +128,7 @@ function Cell(ctx, x, y, width, height){
         {
             if(this.animationUpDownOngoing)
             {
-            	this.arrowSpriteUp.render(this.x, this.y, CELL_SIZE, CELL_SIZE);
+            	this.arrowSpriteUp.render(this.x, this.y, this.width, this.height);
             	if(this.arrowSpriteUp.update())
 	            {
 	            	this.animationUpDownOngoing = false;
@@ -130,7 +144,7 @@ function Cell(ctx, x, y, width, height){
         }
         if(this.highlight)
         {
-        	this.highlightAnim.render(this.x, this.y+highlightOffset, CELL_SIZE, CELL_SIZE/2);
+        	this.highlightAnim.render(this.x, this.y+this.highlightOffset, this.width, this.width/2);
         	if(this.highlightAnim.update())
         	{
         		this.highlight = false;
@@ -153,8 +167,13 @@ function Cell(ctx, x, y, width, height){
 			{
 				this.animationUpDownOngoing = true;
 			}
+			this.state = state;
+			return true;
 		}
-	    this.state = state;
+		else
+		{
+			return false;
+		}
 	}
 	this.reverseState = function()
 	{
@@ -167,6 +186,7 @@ function Cell(ctx, x, y, width, height){
 	        this.state = STATE_DOWN;
 	    }
 	}
+
 	this.highlightAnim = new Sprite(ctx, highlightSpriteSheet, 64, 64, 0, 6, 2, false);
 	this.arrowSpriteUp = new Sprite(ctx, arrowsSprite, 128, 128, 0, 5, 2, false);
 	this.arrowSpriteDown = new Sprite(ctx, arrowsSprite, 128, 128, 128, 5, 2, false);
@@ -178,58 +198,66 @@ function Cell(ctx, x, y, width, height){
 	this.y = y,
 	this.width = width;
 	this.height = height;
+	this.highlightOffset = this.width-this.width*1/7;
 	this.active = false;
 	this.ctx = ctx;
 }
 
-var offset = 30
 //holds array of cells
 function CellArray(ctx, rows, cols, cellSize){
-	this.initialize = function(probability)
+	this.initialize = function(probability, modeCheck)
 	{
-		for(var row=0;row<rows;++row)
+		if(modeCheck)
+			this.mode = ROUGH;
+		else
+			this.mode = SIMPLE;
+
+		var numOfUps = Math.round(this.cols*probability);
+		console.log("numOfUps: " + numOfUps);
+		for(var row=0;row<this.rows;++row)
 		{
-			for(var col=0;col<cols;++col)
+			for(var col=0;col<numOfUps;++col)
 			{
-				this.cellArray[row*cols+col] = new Cell(ctx, this.posX+col*cellSize, this.posY+row*cellSize, cellSize, cellSize);
-				var rand = Math.random();
-				// console.log("rand" +  " " + rand + " " + "probability" + probability);
-				if(rand>probability)
-				{
-				    console.log("setState(STATE_UP)");
-					this.getCell(row, col).setState(STATE_UP);
-				}
-				else
-				{
-                    this.getCell(row, col).setState(STATE_DOWN);
-                }
+				this.cellArray[row*this.cols+col] = new Cell(ctx, this.posX+col*cellSize, this.posY+row*cellSize, cellSize, cellSize);
+				this.getCell(row, col).setState(STATE_UP);
 			}
 		}
+		for(var row=0;row<this.rows;++row)
+		{
+			for(var col=numOfUps;col<this.cols;++col)
+			{
+				this.cellArray[row*this.cols+col] = new Cell(ctx, this.posX+col*cellSize, this.posY+row*cellSize, cellSize, cellSize);
+				this.getCell(row, col).setState(STATE_DOWN);
+			}
+		}
+		shuffle(this.cellArray);
 	}
-	this.judge = function(mode)
+	this.judge = function()
 	{
 	    var chosenCol = Math.round(Math.random()*this.cols);
+	    
 	    cellLeft = this.getCell(1, chosenCol-1);
 	    cellMidLeft = this.getCell(1, chosenCol);
 	    cellMidRight = this.getCell(1, chosenCol+1);
 	    cellRight = this.getCell(1, chosenCol+2);
+
 	    if((cellMidLeft.state == STATE_UP) && (cellMidRight.state == STATE_UP))
 	    {
-	    	console.log("First: cellMidLeft.state" + cellMidLeft.state  + ", cellMidRight.state" + cellMidRight.state);
-            cellLeft.setState(STATE_UP);
-            cellRight.setState(STATE_UP);
+	    	// console.log("First: cellMidLeft.state" + cellMidLeft.state  + ", cellMidRight.state" + cellMidRight.state);
+            changeOccurs = cellLeft.setState(STATE_UP);
+            changeOccurs = cellRight.setState(STATE_UP);
         }
         else if((cellMidLeft.state == STATE_DOWN) && (cellMidRight.state == STATE_DOWN))
         {
-        	console.log("Second: cellMidLeft.state" + cellMidLeft.state  + ", cellMidRight.state" + cellMidRight.state);
-            cellLeft.setState(STATE_DOWN);
-            cellRight.setState(STATE_DOWN);
+        	// console.log("Second: cellMidLeft.state" + cellMidLeft.state  + ", cellMidRight.state" + cellMidRight.state);
+            changeOccurs = cellLeft.setState(STATE_DOWN);
+            changeOccurs = cellRight.setState(STATE_DOWN);
         }
-        else if(mode == ROUGH)
+        else if(this.mode == ROUGH)
         {
-        	console.log("Third: cellMidLeft.state" + cellMidLeft.state  + ", cellMidRight.state" + cellMidRight.state);
-        	cellLeft.setState(cellMidRight.state);
-        	cellRight.setState(cellMidLeft.state);
+        	// console.log("Third: cellMidLeft.state" + cellMidLeft.state  + ", cellMidRight.state" + cellMidRight.state);
+        	changeOccurs = cellLeft.setState(cellMidRight.state);
+        	changeOccurs = cellRight.setState(cellMidLeft.state);
         }
         cellMidRight.startHighlight();
         cellMidLeft.startHighlight();
@@ -261,6 +289,8 @@ function CellArray(ctx, rows, cols, cellSize){
 		correct_col = mod(col, this.cols);
 		return this.cellArray[correct_row*this.cols+correct_col];
 	}
+	this.mode = SIMPLE;
+	this.randMode = SIMPLE;
 	this.cellArray = new Array();
 	this.posX = 0;
 	this.posY = 0;
@@ -279,46 +309,47 @@ var data = [];
 var dataSeries = { type: "line" };
 var dataPoints = [];
 dataSeries.dataPoints = dataPoints;
-function init(upDensity)
+function init(upDensity, modeCheck)
 {
     console.log("Init");
-	cellArray = new CellArray(ctx, TOTAL_ROWS, TOTAL_COLS, CELL_SIZE);
-	cellArray.initialize(upDensity);
-//	initialCellsState = cellArray.getArrayState();
-	newtime = new Date().getTime();
+
+	cellArray = new CellArray(ctx, TOTAL_ROWS, TOTAL_COLS, cellSize);
+	cellArray.initialize(upDensity, modeCheck);
+	renderTime = new Date().getTime();
 	applicationTime = new Date().getTime();
 	steps = 0;
 	dataPoints = [];
 	dataSeries.dataPoints = dataPoints;
 }
 var renderDeltaTime = 1000/FPS;
-var applicationDeltaTime = 1000/FPS*2;
-var CHANGE_TIME = 1000/CHANGES_PER_SECOND;
-var arrowTime = CHANGE_TIME;
+var applicationDeltaTime = 1000/FPS;
+var arrowDeltaTime = 0;
 // funkcja rysujaca i obliczajaca polozenie
 function draw(){
 	if(canvas.getContext){
-		var time = new Date();
-		if(Math.abs(newtime-time.getTime())>renderDeltaTime)
+		var time = new Date().getTime();
+		deltaTime = Math.abs(renderTime-time);
+		if(deltaTime>renderDeltaTime)
 		{
-			newtime = new Date().getTime();
+			renderTime = time;
 			ctx.clearRect(0,0,canvas_width, canvas_height);
 			cellArray.draw();
 		}
 		if(!paused) 
 		{
-			deltaTime = Math.abs(applicationTime-time.getTime());
+			deltaTime = Math.abs(applicationTime-time);
+			arrowDeltaTime += deltaTime;
 			if(deltaTime>applicationDeltaTime)
 			{
-				arrowTime = arrowTime - deltaTime;
-				if(arrowTime<0)
+				var changesPerSecond = document.getElementById("changesPerSecond").value;
+				applicationTime = time;
+				if(arrowDeltaTime>1000/changesPerSecond)
 				{
-					arrowTime = CHANGE_TIME;
-					cellArray.judge(ROUGH);
+					arrowDeltaTime = 0;
 					steps = steps + 1;
 					drawChart(cellArray.getUpsDensity(), steps);
+					cellArray.judge();
 				}
-				applicationTime = new Date().getTime();
 			}
 		}
 		else
@@ -327,16 +358,11 @@ function draw(){
 			{
 				ctx.clearRect(0,0,canvas_width, canvas_height);
 				cellArray.draw();
-				cellArray.judge(ROUGH);
 				steps = steps + 1;
 				drawChart(cellArray.getUpsDensity(), steps);
+				cellArray.judge();
 				step = false;
 			}
-		}
-		if(restart)
-		{
-			cellArray.setArrayState(initialCellsState);
-			restart = false;
 		}
 		if(instances == 1)
 			window.requestAnimationFrame(draw);
@@ -349,7 +375,9 @@ function draw(){
 function startFunc(){
 	instances = instances + 1;
 	var lifeDensity = document.getElementById("density").value;
-	init(lifeDensity);
+	// var castLotsCheck = document.getElementById("castLotsCheck").checked;
+	var modeCheck = document.getElementById("modeCheck").checked;
+	init(lifeDensity, modeCheck);
 	draw();
 	
 	console.log("Start");
@@ -370,6 +398,23 @@ function restartFunc(){
 	console.log("Restart");
 }
 
+var chart = new CanvasJS.Chart("chartContainer",
+{
+	zoomEnabled: false,
+	panEnabled: false, 
+	title:{
+		text: "Gęstość strzałek skierowanych ku górze" 
+	},
+	legend: {
+		horizontalAlign: "right",
+		verticalAlign: "center"        
+	},
+	axisY:{
+		includeZero: false
+	},
+	data: data,  // random generator below
+});
+
 function drawChart(actualUps, steps) 
 {
 	dataPoints.push({
@@ -377,22 +422,7 @@ function drawChart(actualUps, steps)
 		y: actualUps                
 	});
 	data.push(dataSeries);   
-	var chart = new CanvasJS.Chart("chartContainer",
-	{
-		zoomEnabled: true,
-		panEnabled: true, 
-		title:{
-			text: "Wykres strzalek w gore" 
-		},
-		legend: {
-			horizontalAlign: "right",
-			verticalAlign: "center"        
-		},
-		axisY:{
-			includeZero: false
-		},
-		data: data,  // random generator below
-    });
+
 	chart.render();
 	data = []
 }
